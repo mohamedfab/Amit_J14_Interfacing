@@ -20,21 +20,25 @@
 #include "Int.h"
 #include "Adc.h"
 #include "Wdg.h"
+#include "Uart.h"
+#define BAUD_PRESCALE (103)
 
 int main(void)
 {
+	u8 data =0;
 	Led_Init();
-	WDG_ON();  /*	WDG starts with window 2.1 Second	*/
-	Led_TurnON(LED0);
-	_delay_ms(500);
-	Led_TurnOFF(LED0);
-	_delay_ms(500);
-	while(1)
+	UART_Init(103);
+	UART_TransmitStr((u8*)"Hello UART....\n");
+	while (1)
 	{
-		WDG_Refresh();
-	 Led_TurnON(LED1);
-	 _delay_ms(500);
-	 Led_TurnOFF(LED1);
-	 _delay_ms(500);
+		data=UART_ReceiveChr();
+		if (data == 'm')
+		{
+			Led_Toggle(LED0);
+		}
+		else if (data == 'n')
+		{
+			Led_Toggle(LED1);
+		}
 	}
 }
