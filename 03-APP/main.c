@@ -25,20 +25,9 @@
 
 int main(void)
 {
-	u8 data =0;
-	Led_Init();
-	UART_Init(103);
-	UART_TransmitStr((u8*)"Hello UART....\n");
+
 	while (1)
 	{
-		data=UART_ReceiveChr();
-		if (data == 'm')
-		{
-			Led_Toggle(LED0);
-		}
-		else if (data == 'n')
-		{
-			Led_Toggle(LED1);
-		}
+
 	}
 }
