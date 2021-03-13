@@ -21,13 +21,20 @@
 #include "Adc.h"
 #include "Wdg.h"
 #include "Uart.h"
-#define BAUD_PRESCALE (103)
-
+#include "Eeprom14C16.h"
 int main(void)
 {
-
+	u8 data=0;
+	Lcd_Init();
+	Lcd_Cmd(_LCD_CURSOR_OFF);
+	Eeprom14C32_Init();
+	Eeprom14C32_WriteByte(0x00, 'A');
+//	_delay_ms(1000);
+	data = Eeprom14C32_ReadByte(0x00);
+	Lcd_GotoRowColumn(0, 0);
+	Lcd_DisplayChr(data);
 	while (1)
 	{
-
+		;
 	}
 }

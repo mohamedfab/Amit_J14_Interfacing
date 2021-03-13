@@ -43,19 +43,15 @@
 * \Parameters (in) : None
 * \Return value:   : None
 *******************************************************************************/
-void I2C_MasterInit(u8 addr)
+void I2C_MasterInit(void)
 {
-    /* Bit Rate: 400.000 kHz */
+    /* Bit Rate: 400 KHZ */
 	I2C_TWBR_REG=0x0C;
-    /* I2C Bus Slave Address	*/
-	/*	enable general call response in slave mode	*/
-	SET_BIT(I2C_TWAR_REG,I2C_SLAVE_RESPONSE_BIT_NO);
-    /* I2C Bus Slave Address	*/
-	I2C_TWAR_REG |= (addr<<1);
-    // TWI Interrupt: Off
-	I2C_TWCR_REG |=I2C_ENABLE|I2C_ENABLE_ACK;
+    /* enable I2C Module	*/
+	/*	enable ACK check	*/
+	I2C_TWCR_REG |=I2C_ENABLE|I2C_ENABLE_ACK|I2C_INTERRUPT_FLAG;
 	/*	make sure that	*/
-	I2C_TWSR_REG |=I2C_PRESCALER_4;
+	//I2C_TWSR_REG |=I2C_PRESCALER_1;
 }
 /******************************************************************************
 * \Syntax          : void I2C_SlaveInit(void)
@@ -72,7 +68,8 @@ void I2C_SlaveInit(u8 addr)
 	SET_BIT(I2C_TWAR_REG,I2C_SLAVE_RESPONSE_BIT_NO);
     /* I2C Bus Slave Address	*/
 	I2C_TWAR_REG |= (addr<<1);
-	/*	enable I2C module and ACK	*/
+    /* enable I2C Module	*/
+	/*	enable ACK check	*/
 	I2C_TWCR_REG |=I2C_ENABLE|I2C_ENABLE_ACK;
 
 }
@@ -85,16 +82,25 @@ void I2C_SlaveInit(u8 addr)
 * \Parameters (in) : None
 * \Return value:   : None
 *******************************************************************************/
-void I2C_StartCondition(void)
+boolean I2C_StartCondition(void)
 {
 	/*	send start condition	*/
-	I2C_TWCR_REG =I2C_INTERRUPT_FLAG|I2C_START_COND;
+	I2C_TWCR_REG = I2C_INTERRUPT_FLAG|I2C_START_COND|I2C_ENABLE;
     /*	Wait until start condition sent successfully	*/
     while (!(CHECK_BIT(I2C_TWCR_REG,I2C_INTERRUPT_FLAG_BIT_NO)))
     {
     	/*Do Nothing */
     	   ;
     }
+    if (I2C_ReadStatus() != I2C_START_ACK)
+    {
+    	return FALSE;
+    }
+    else
+    {
+    	/*	Do Nothing	*/
+    }
+    return TRUE;
 }
 /******************************************************************************
 * \Syntax          : void I2C_RepeatedStartCondition(void)
@@ -105,16 +111,25 @@ void I2C_StartCondition(void)
 * \Parameters (in) : None
 * \Return value:   : None
 *******************************************************************************/
-void I2C_RepeatedStartCondition(void)
+boolean I2C_RepeatedStartCondition(void)
 {
 	/*	send start condition	*/
-	I2C_TWCR_REG =I2C_INTERRUPT_FLAG|I2C_ENABLE|I2C_START_COND;
+	I2C_TWCR_REG |= I2C_INTERRUPT_FLAG|I2C_ENABLE|I2C_START_COND;
     /*	Wait until start condition sent successfully	*/
     while (!(CHECK_BIT(I2C_TWCR_REG,I2C_INTERRUPT_FLAG_BIT_NO)))
     {
     	/*Do Nothing */
     	   ;
     }
+    if (I2C_ReadStatus() != I2C_REP_START_ACK)
+    {
+    	return FALSE;
+    }
+    else
+    {
+    	/*	Do Nothing	*/
+    }
+    return TRUE;
 }
 /******************************************************************************
 * \Syntax          : void I2C_StopCondition(void)
@@ -128,7 +143,7 @@ void I2C_RepeatedStartCondition(void)
 void I2C_StopCondition(void)
 {
 	/*	send stop condition	*/
-	I2C_TWCR_REG =I2C_INTERRUPT_FLAG|I2C_ENABLE|I2C_STOP_COND;
+	I2C_TWCR_REG |= I2C_INTERRUPT_FLAG|I2C_ENABLE|I2C_STOP_COND;
 	/*	Wait until start condition sent successfully	*/
     while (!(CHECK_BIT(I2C_TWCR_REG,I2C_INTERRUPT_FLAG_BIT_NO)))
     {
@@ -150,7 +165,7 @@ void I2C_WriteByte(u8 data)
     /*	Put data On I2C data Register	*/
 	I2C_TWDR_REG = data;
     /*	Send Data	*/
-	I2C_TWCR_REG = I2C_INTERRUPT_FLAG;
+	I2C_TWCR_REG |= I2C_INTERRUPT_FLAG|I2C_ENABLE;
 	/*	Wait until data sent successfully	*/
     while (!(CHECK_BIT(I2C_TWCR_REG,I2C_INTERRUPT_FLAG_BIT_NO)))
     {
@@ -167,12 +182,20 @@ void I2C_WriteByte(u8 data)
 * \Parameters (in) : addr - slave address
 * \Return value:   : None
 *******************************************************************************/
-void I2C_Send_SlaveAddressWriteOperation(u8 addr)
+boolean I2C_Send_SlaveAddressWriteOperation(u8 addr)
 {
 	u8 loc_addrWrite=0;
 	loc_addrWrite=(addr<<1);
 	I2C_WriteByte(loc_addrWrite);
-
+    if (I2C_ReadStatus() != I2C_SLA_W_ACK)
+    {
+    	return FALSE;
+    }
+    else
+    {
+    	/*	Do Nothing	*/
+    }
+    return TRUE;
 
 }
 /******************************************************************************
@@ -184,11 +207,20 @@ void I2C_Send_SlaveAddressWriteOperation(u8 addr)
 * \Parameters (in) : addr - slave address
 * \Return value:   : None
 *******************************************************************************/
-void I2C_Send_SlaveAddressReadOperation(u8 addr)
+boolean I2C_Send_SlaveAddressReadOperation(u8 addr)
 {
 	u8 loc_addrWrite=0;
 	loc_addrWrite=(addr<<1)|(0x01);
 	I2C_WriteByte(loc_addrWrite);
+    if (I2C_ReadStatus() != I2C_SLA_R_ACK)
+    {
+    	return FALSE;
+    }
+    else
+    {
+    	/*	Do Nothing	*/
+    }
+    return TRUE;
 }
 /******************************************************************************
 * \Syntax          : u8 I2C_ReadByte(void)
@@ -201,7 +233,7 @@ void I2C_Send_SlaveAddressReadOperation(u8 addr)
 *******************************************************************************/
 u8 I2C_ReadByte(void)
 {
-	I2C_TWCR_REG = I2C_INTERRUPT_FLAG|I2C_ENABLE;
+	I2C_TWCR_REG |= I2C_INTERRUPT_FLAG|I2C_ENABLE;
 	/*	Wait until data sent successfully	*/
     while (!(CHECK_BIT(I2C_TWCR_REG,I2C_INTERRUPT_FLAG_BIT_NO)))
     {
