@@ -29,7 +29,6 @@ int main(void)
 	Lcd_Cmd(_LCD_CURSOR_OFF);
 	Eeprom14C32_Init();
 	Eeprom14C32_WriteByte(0x00, 'A');
-//	_delay_ms(1000);
 	data = Eeprom14C32_ReadByte(0x00);
 	Lcd_GotoRowColumn(0, 0);
 	Lcd_DisplayChr(data);
